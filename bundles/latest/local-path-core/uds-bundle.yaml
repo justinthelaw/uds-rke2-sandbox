@@ -35,7 +35,7 @@ packages:
     description: "Deploys UDS Core services"
     repository: ghcr.io/defenseunicorns/packages/uds/core
     # TODO: renovate setup
-    ref: "0.22.0-registry1"
+    ref: "0.22.2-registry1"
     overrides:
       loki:
         loki:
@@ -121,3 +121,5 @@ packages:
     description: "Deploys the UDS Core Pepr policy exemptions"
     repository: ghcr.io/justinthelaw/packages/uds/uds-rke2/exemptions
     ref: "0.4.2-local-path"
+    optionalComponents:
+      - nvidia-gpu-operator-exemptions

@@ -1,0 +1,83 @@
+# Install K8s NFD separately
+nfd:
+  enabled: false
+
+operator:
+  repository: registry1.dso.mil/ironbank/opensource/nvidia
+  image: gpu-operator
+  version: v24.3.0
+  # Sets default runtime is containerd, not docker
+  defaultRuntime: containerd
+  runtimeClass: nvidia
+  # Removes all CRDs upon chart uninstall
+  cleanupCRD: true
+  logging:
+    # Zap time encoding (one of 'epoch', 'millis', 'nano', 'iso8601', 'rfc3339' or 'rfc3339nano')
+    timeEncoding: epoch
+    # Zap Level to configure the verbosity of logging. Can be one of 'debug', 'info', 'error', or any integer value > 0 which corresponds to custom debug levels of increasing verbosity
+    level: debug
+    # Development Mode defaults(encoder=consoleEncoder,logLevel=Debug,stackTraceLevel=Warn)
+    # Production Mode defaults(encoder=jsonEncoder,logLevel=Info,stackTraceLevel=Error)
+    develMode: true
+  resources:
+    limits:
+      cpu: 1000m
+      memory: 500Mi
+    requests:
+      cpu: 500m
+      memory: 200Mi
+
+validator:
+  repository: registry1.dso.mil/ironbank/opensource/nvidia
+  image: gpu-operator-validator
+  version: v24.3.0
+  driver:
+    # RKE2-specific configurations
+    env:
+      - name: disable_dev_char_symlink_creation
+        value: "true"
+      - name: NVIDIA_VISIBLE_DEVICES
+        value: all
+        # Default value of "all" causes the "display" capability to also be considered;
+        # however, not all hosts have or allow that capability, causing the daemonset to fail
+      - name: NVIDIA_DRIVER_CAPABILITIES
+        value: compute,utility
+
+driver:
+  # Assumes that the NVIDIA GPU drivers are pre-installed on the host
+  enabled: false
+
+# Disabled by default due to lack of IronBank images
+# Expectation is that NVIDIA Container Toolkit is pre-installed and pre-configured on the host
+toolkit:
+  # Must be set to true if using the NVIDIA container Toolkit daemonset
+  enabled: true
+  env:
+    - name: disable_dev_char_symlink_creation
+      value: "true"
+    # RKE2-specific configurations
+    - name: CONTAINERD_CONFIG
+      value: /var/lib/rancher/rke2/agent/etc/containerd/config.toml.tmpl
+    - name: CONTAINERD_SOCKET
+      value: /run/k3s/containerd/containerd.sock
+    - name: CONTAINERD_RUNTIME_CLASS
+      value: nvidia
+    - name: CONTAINERD_SET_AS_DEFAULT
+      value: "true"
+
+devicePlugin:
+  env:
+    - name: PASS_DEVICE_SPECS
+      value: "true"
+    - name: FAIL_ON_INIT_ERROR
+      value: "true"
+    - name: DEVICE_LIST_STRATEGY
+      value: envvar
+    - name: DEVICE_ID_STRATEGY
+      value: uuid
+    - name: NVIDIA_VISIBLE_DEVICES
+      value: all
+      # Default value of "all" causes the "display" capability to also be considered;
+      # however, not all hosts have or allow that capability, causing the daemonset to fail
+    - name: NVIDIA_DRIVER_CAPABILITIES
+      value: compute,utility

@@ -35,6 +35,7 @@ tasks:
       - task: local-path-init
       - task: minio
       - task: leapfrogai-workarounds
+      - task: nvidia-gpu-operator
 
       # UDS bundles
       - task: local-path-core-bundle
@@ -199,4 +200,13 @@ tasks:
         with:
           path: build/packages
           name: leapfrogai-workarounds
+          targetRepo: justinthelaw/packages/uds/uds-rke2/
+
+  - name: nvidia-gpu-operator
+    description: "Publish the NVIDIA GPU Operator package"
+    actions:
+      - task: publish
+        with:
+          path: build/packages
+          name: nvidia-gpu-operator
           targetRepo: justinthelaw/packages/uds/uds-rke2/

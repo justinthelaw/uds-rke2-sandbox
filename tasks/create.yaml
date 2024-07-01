@@ -21,7 +21,7 @@ variables:
   - name: CORE_PKG_VERSION
     description: "The version of UDS Core package to deploy"
     # TODO: renovate setup
-    default: "0.22.0"
+    default: "0.22.2"
   - name: CORE_PKG_FLAVOR
     description: "Flavor of the package to use (`registry1` or `upstream`)."
     default: "registry1"
@@ -43,6 +43,8 @@ tasks:
       - task: local-path-init
       - task: minio
       - task: leapfrogai-workarounds
+      - task: nvidia-gpu-operator
+      - task: uds-core
 
       # UDS bundles
       - task: local-path-core-bundle
@@ -106,7 +108,7 @@ tasks:
     actions:
       - description: "Create the UDS bundle for the amd64 architectures"
         cmd: |
-          sudo uds create "${{ .inputs.path }}" \
+          sudo UDS_CONFIG=${{ .inputs.path }}/uds-config.yaml uds create "${{ .inputs.path }}" \
             -o "${{ .inputs.outputPath }}" \
             ${CREATE_BUNDLE_OPTIONS}
 
@@ -222,3 +224,14 @@ tasks:
           path: packages/leapfrogai
           outputPath: build/packages
           zarfConfig: packages/leapfrogai/zarf-config.yaml
+
+  - name: nvidia-gpu-operator
+    description: "Build the NVIDIA GPU Operator package"
+    actions:
+      - description: "Create the Zarf package for the amd64 architectures"
+        cmd: |
+          sudo ZARF_CONFIG="packages/nvidia-gpu-operator/zarf-config.yaml" uds zarf package create "packages/nvidia-gpu-operator" \
+            --registry-override=nvcr.io=localhost:5001 --insecure \
+            -o "build/packages" \
+            --set VERSION=${VERSION} \
+            ${CREATE_OPTIONS}

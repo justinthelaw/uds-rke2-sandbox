@@ -15,19 +15,20 @@ variables:
 
 tasks:
   - name: uds-rke2
-    description: "Complete a stand-up and stand-down of ONLY the RKE2 cluster"
+    description: "Deploy a new RKE2 cluster"
     actions:
+      - task: setup:clean
+
       - task: create:uds-rke2
       - task: deploy:uds-rke2-bootstrap
         with:
           joinToken: "my-test-token"
 
+  - name: local-path-minio-init
+    description: "Deploy the Local Path Provisioner + MinIO Zarf Init"
+    actions:
       - task: setup:clean
 
-  - name: local-path-minio-init
-    description: "Bootstrap a new RKE2 cluster, with the Local Path Provisioner + MinIO Zarf Init"
-    actions:
-      # Zarf packages
       - task: create:local-path-init
       - task: deploy:local-path-init
         with:
@@ -38,3 +39,20 @@ tasks:
 
       - task: create:uds-rke2-infrastructure
       - task: deploy:uds-rke2-infrastructure
+
+  - name: leapfrogai-specific-packages
+    description: "Deploy the LeapfrogAI workarounds and NVIDIA GPU operator"
+    actions:
+      - task: setup:clean
+
+      # Unexplained workaround for GH runner issues during CoreDNS pod validation
+      # TODO: see issue for more details
+      - cmd: sudo uds zarf tools kubectl describe nodes
+
+      - task: create:leapfrogai-workarounds
+      - task: deploy:leapfrogai-workarounds
+
+      - task: setup:clean
+
+      - task: create:nvidia-gpu-operator
+      - task: deploy:nvidia-gpu-operator

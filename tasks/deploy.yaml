@@ -29,10 +29,15 @@ tasks:
       name:
         description: "Name of the Zarf package being deployed"
         required: true
+      optionalComponents:
+        description: "Optional components to deploy"
+        required: false
+        default: ""
     actions:
       - description: "Deploy the Zarf package for amd64 architectures"
         cmd: |
           sudo uds zarf package deploy "${{ .inputs.path }}/zarf-package-${{ .inputs.name }}-amd64-${VERSION}.tar.zst" \
+          ${{ .inputs.optionalComponents }} \
           ${DEPLOY_OPTIONS}
 
   - name: bundle
@@ -47,10 +52,17 @@ tasks:
       extraOptions:
         description: "Extra deployment options specific to the UDS bundle's configuration"
         required: false
+      udsConfig:
+        description: "UDS configuration manifest for deployment"
+        required: true
+      version:
+        description: "UDS bundle version to be deployed"
+        required: true
+        default: ${VERSION}
     actions:
       - description: "Deploy the UDS bundle for the amd64 architectures"
         cmd: |
-          sudo uds deploy "${{ .inputs.path }}/uds-bundle-${{ .inputs.name }}-amd64-${VERSION}.tar.zst" \
+          sudo UDS_CONFIG=${{ .inputs.udsConfig }} uds deploy "${{ .inputs.path }}/uds-bundle-${{ .inputs.name }}-amd64-${{ .inputs.version }}.tar.zst" \
             ${{ .inputs.extraOptions }} \
             ${DEPLOY_BUNDLE_OPTIONS}
 
@@ -66,6 +78,19 @@ tasks:
           name: uds-rke2-local-path-core
           path: build/bundles
           extraOptions: "--set JOIN_TOKEN=my-test-token"
+          udsConfig: "bundles/latest/local-path-core/uds-config.yaml"
+          version: ${VERSION}
+
+  - name: local-path-core-bundle-dev
+    description: "Deploy the Local Path Provisioner UDS RKE2 bootstrapping bundle"
+    actions:
+      - task: bundle
+        with:
+          name: uds-rke2-local-path-core
+          path: build/bundles
+          extraOptions: "--set JOIN_TOKEN=my-test-token"
+          udsConfig: "bundles/dev/local-path-core/uds-config.yaml"
+          version: dev
 
   ###################
   # STANDARD PACKAGES
@@ -133,6 +158,15 @@ tasks:
           path: build/packages/local-path
           name: exemptions
 
+  - name: uds-rke2-exemptions-local-path-nvidia
+    description: "Deploy the UDS RKE2 service Pepr policy exemptions package"
+    actions:
+      - task: deploy
+        with:
+          path: build/packages/local-path
+          name: exemptions
+          optionalComponents: "--components nvidia-gpu-operator-exemptions"
+
   - name: minio
     description: "Deploy the MinIO package"
     actions:
@@ -178,3 +212,11 @@ tasks:
         with:
           path: build/packages
           name: leapfrogai-workarounds
+
+  - name: nvidia-gpu-operator
+    description: "Deploy the NVIDIA GPU Operator package"
+    actions:
+      - task: deploy
+        with:
+          path: build/packages
+          name: nvidia-gpu-operator

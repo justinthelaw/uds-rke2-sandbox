@@ -29,7 +29,7 @@ alias k="uds zarf tools kubectl"
 alias kubectl="uds zarf tools kubectl"
 alias zarf='uds zarf'
 alias k9s='uds zarf tools monitor'
-alias udsclean="uds zarf tools clear-cache && rm -rf ~/.uds-cache && rm -rf ~/.zarf-cache && rm -rf /tmp/uds* && rm -rf /tmp/zarf-*"
+alias udsclean="uds zarf tools clear-cache && rm -rf ~/.uds-cache && rm -rf /tmp/zarf-*"
 ```
 
 For fulfilling `xargs` and `kubectl` binary requirements necessary for running some of the _optional_ deployment helper scripts:
@@ -91,18 +91,18 @@ See the UDS [`create` tasks](./tasks/create.yaml) file for more details.
 To create all packages and bundles, do the following:
 
 ```bash
-# Login to Registry1
+# Login to Registry1 (bash)
 set +o history
 export REGISTRY1_USERNAME="YOUR-USERNAME-HERE"
 export REGISTRY1_PASSWORD="YOUR-PASSWORD-HERE"
-echo $REGISTRY1_PASSWORD | zarf tools registry login registry1.dso.mil --username $REGISTRY1_USERNAME --password-stdin
+echo $REGISTRY1_PASSWORD | uds zarf tools registry login registry1.dso.mil --username $REGISTRY1_USERNAME --password-stdin
 set -o history
 
-# Login to ghcr
+# Login to ghcr (bash)
 set +o history
 export GHCR_USERNAME="YOUR-USERNAME-HERE"
 export GHCR_PASSWORD="YOUR-PASSWORD-HERE"
-echo $GHCR_PASSWORD | zarf tools registry login ghcr.io --username $GHCR_USERNAME --password-stdin
+echo $GHCR_PASSWORD | uds zarf tools registry login ghcr.io --username $GHCR_USERNAME --password-stdin
 set -o history
 
 uds run create:all
@@ -115,15 +115,20 @@ uds run create:all
 
 See the UDS [`deploy` tasks](./tasks/deploy.yaml) file for more details.
 
-To deploy a bundle (e.g., UDS RKE2 bootstrap with `local-path` flavor), do the following:
+For example, to deploy the UDS RKE2 bootstrap bundle with `local-path` flavor, do the following:
 
 ```bash
-# LATEST
-uds run uds-rke2-local-path-core
+# create the /opt/uds directory on an existing mounted LVM
+sudo mkdir /opt/uds
 
-# DEV
+# change permissions to the nonroot or nobody user for local storage volume creation
+sudo chown -Rv 65534:65534 /opt/uds
+
+# deploy the local dev version
 uds run uds-rke2-local-path-core-dev
 ```
+
+Please note that the above steps vary from the original [`local-path`](./docs/LOCAL-PATH.md) instructions for simplicity sake.
 
 #### Publish
 
@@ -162,11 +167,17 @@ uds run setup:uds-rke2-destroy
 
 #### Test
 
-Run the following to run the E2E CI test(s):
+The GitHub CI workflow uses UDS tasks to run deployments of the package components within this repository, but not on the UDS Core components.
+
+To run this test locally, you can run the following:
 
 ```bash
-uds run uds-rke2-local-path-test
+uds run uds-rke2-local-path-core-dev
 ```
+
+Then, modify your `/etc/hosts` according to your base IP on the Istio Tenant gateway, with a redirect for `sso.local.uds.dev`.
+
+Finally, go to `sso.local.uds.dev` to see if the KeyCloak SSO panel is accessible via your browser.
 
 ## Additional Info
 
